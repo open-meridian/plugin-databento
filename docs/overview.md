@@ -20,7 +20,7 @@ declaring a delay. What your plan reaches of each asset class -- **Real
 time** or **Historical only** -- you set in Settings; a read your plan does
 not reach is declined, not covered.
 
-## Its stock datasets
+## Its daily dataset
 
 - **Daily** (`databento:daily`): each listing's close and daily bar for a
   business date -- open, high, low, close and volume -- from Databento US
@@ -29,6 +29,9 @@ not reach is declined, not covered.
   York's trading day; the summary is published once the day is over (its
   last after 20:15 New York). Read when a plugin asks, and each evening the
   closes of every listing already served are recorded unasked. Either plan.
+
+## Its live and trades datasets
+
 - **Live** (`databento:live`): the last sale and the best bid and offer, and
   the quote with its sizes in shares, from Databento US Equities Mini:
   Databento's own aggregate of the exchanges' and trading systems' own
@@ -44,6 +47,8 @@ not reach is declined, not covered.
   way, a trade never recorded twice. Where Databento states which side
   initiated a trade, it is recorded as the aggressor. Kept two days by
   default.
+
+## What a stock row names
 
 Databento US Equities Mini anonymizes its venues, so a stock's price, quote
 or trade names none: it is recorded as consolidated. Databento normalizes no
@@ -64,9 +69,13 @@ your instruments: a series gets its own record only when a plugin asks for
 one, for an order, under your deployment's series request rule. A chain is
 recorded for the expirations or series a plugin asks for.
 
+## A series' terms
+
 A series' style and settlement come from the code its definition states
 (ISO 10962); a series whose definition states none is not recorded, and is
 counted on **Datasets** as not converted: no style is guessed.
+
+## Open interest and volume
 
 Open interest and volume are OPRA's, published before the open for the
 market day before, and dated that day by your deployment's US equity

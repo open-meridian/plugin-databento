@@ -15,6 +15,8 @@ licensing on databento.com before relying on it.
 - **Distribution.** Showing data to outside parties, or redistributing it,
   is a separate entitlement and depends on each venue's terms.
 
+## What the plugin declares
+
 So the plugin declares each dataset's default terms conservatively: shown to
 people, derived data for internal use only, never redistributed; OPRA's one
 person's. Your deployment's Data sources page records the licence you enter
