@@ -13,7 +13,7 @@ one dataset per timeliness.
 
 ## What it is
 
-- `src/databento/declared.py` and `settings.py`: the catalogue (`daily`,
+- `src/plugin_databento/declared.py` and `settings.py`: the catalogue (`daily`,
   `live`, `trades`, `options`: Databento sells real time and history and no
   delayed feed, so one dataset a kind, none declaring a delay), each naming
   the source behind it as its vendor (Nasdaq NLS Plus, the US equity venues'
@@ -22,30 +22,30 @@ one dataset per timeliness.
   `stocks_timeliness` and `options_timeliness`, `real_time` or
   `end_of_day`; `sample_data`, a developer's) and the storage. A dataset's
   key, modes, day and default terms change only with a new version.
-- `src/databento/vendor.py`: the only module that speaks HTTP to Databento,
+- `src/plugin_databento/vendor.py`: the only module that speaks HTTP to Databento,
   its historical API (`timeseries.get_range` as JSON lines with
   `pretty_px`, `metadata.get_dataset_range`). Every answer is kept as a raw
   record first (the SDK's `RawStore`); the key is Basic authentication's
   user name and nowhere else; only `hist.databento.com` is asked.
-- `src/databento/gateway.py`: the only module that speaks the live
+- `src/plugin_databento/gateway.py`: the only module that speaks the live
   gateway's Raw API (plain TCP, port 13000; there is no WebSocket):
   greeting, CRAM challenge answered with a SHA-256 (the key never crosses),
   subscriptions, `start_session`, JSON records. Blocking `replay` (a short
   session to the end of an intraday replay) and asyncio `Session` (kept
   open for the stream).
-- `src/databento/convert.py`: Databento's records to what is recorded,
+- `src/plugin_databento/convert.py`: Databento's records to what is recorded,
   Decimals from their own text, never a float; its null sentinels no value;
   a trade keyed by its listing, its two clocks and its place among trades
   stated with the same two (`Numbering`), alike from the stream, a replay
   and the history; an option's style and settlement from its definition's
   CFI code, never guessed. `source.py` puts the clients and the conversion
   together for `lake.py` and `chains.py`.
-- `src/databento/lake.py`: the SDK's listings feed
+- `src/plugin_databento/lake.py`: the SDK's listings feed
   (`meridian.roles.data.listings.Feed`), this module keeping only what is
   Databento's: what each plan reaches, the history's reach, the stated
   aggressor, and the edge's feed delay and quality checks (TEMPORARY until
   the SDK's listings feed takes them over).
-- `src/databento/chains.py`: option chains through the SDK's
+- `src/plugin_databento/chains.py`: option chains through the SDK's
   `meridian.roles.chains` helpers, under the underlying and keyed by OCC OSI
   symbol: never resolve, mint or request a series' record (561). Series and
   statistics from the history by parent symbol (`SPY.OPT`), the latest day
@@ -54,15 +54,15 @@ one dataset per timeliness.
   open interest dated by the deployment's calendar (ReadCalendar) or not
   recorded; option trades streamed for a standing want. Greeks are never
   read (the engine computes its own).
-- `src/databento/stream.py`: the live sessions, stocks (`EQUS.MINI`:
+- `src/plugin_databento/stream.py`: the live sessions, stocks (`EQUS.MINI`:
   trades, `bbo-1s`) and options (`OPRA.PILLAR`: trades); one session per
   dataset, reconnecting, every line kept first.
-- `src/databento/page.py`, `records.py` and `templates/`: the data role's
+- `src/plugin_databento/page.py`, `records.py` and `templates/`: the data role's
   two pages under Manage, Connection and Datasets, each a read tool
   (`read_connection`, `read_datasets`). The templates extend the role's and
   add Databento's nuance at its blocks alone: never rename, reorder or drop a
   common section, row, column or label. No page shows a price.
-- `src/databento/synthetic.py` and `synthetic/exchange.json`: Databento's
+- `src/plugin_databento/synthetic.py` and `synthetic/exchange.json`: Databento's
   documented record shapes with every value invented -- the historical API
   and the live gateway both -- for sample data, the tests and the e2e. Never
   commit a real record.
@@ -111,8 +111,8 @@ sidecar in a Meridian deployment and reaches nothing else: what it may publish
 and subscribe to comes from the roles `pyproject.toml` declares under
 `[tool.meridian]`, once a deployment admin approves them.
 
-- `src/databento/__main__.py` connects to the sidecar and serves the
-  pages; `src/databento/page.py` declares them, each a view function
+- `src/plugin_databento/__main__.py` connects to the sidecar and serves the
+  pages; `src/plugin_databento/page.py` declares them, each a view function
   and a template under `templates/`, built on the plugin UI kit (below).
 - A save changes what the plugin does, never what it is allowed to do. Roles
   and dependencies take a new version, which a person approves.
@@ -504,7 +504,7 @@ and names.
 ## Its declaration and its documentation
 
 **The declaration is the whole of what a version says about itself**
-(contract v25): `src/databento/declaration.py`'s `DECLARATION` --
+(contract v25): `src/plugin_databento/declaration.py`'s `DECLARATION` --
 its settings, its interface (its pages, and the tools their typed routes
 make), whether it reads external accounts, and its documentation. `meridian
 plugin upload` reads it from the built image, and the deployment holds the

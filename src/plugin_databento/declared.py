@@ -68,7 +68,7 @@ from .convert import DAY_END_MINUTE
 from .lake import DAILY, LIVE, LIVE_CADENCE_SECONDS, TRADES, US_EQUITY_CALENDAR
 from .vendor import EQUS_MINI, EQUS_SUMMARY, OPRA
 
-#: Who originated each dataset's data, and who carries it (proposed names,
+#: Who originated each dataset's data, and who carries it (approved 915-917,
 #: after ruling 908's pattern for Massive).
 SUMMARY_SOURCE = "Nasdaq NLS Plus (consolidated)"
 EQUITY_SOURCE = "US equity venues' own feeds (exchanges, ATSs)"

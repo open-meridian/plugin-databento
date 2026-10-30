@@ -9,10 +9,10 @@ from pathlib import Path
 import pytest
 from meridian.edge import RawStore
 
-from databento.__main__ import feed_for, source_for
-from databento.page import State
-from databento.preview import PAGES, main
-from databento.settings import config_from
+from plugin_databento.__main__ import feed_for, source_for
+from plugin_databento.page import State
+from plugin_databento.preview import PAGES, main
+from plugin_databento.settings import config_from
 
 from conftest import KEY
 

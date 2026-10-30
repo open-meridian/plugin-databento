@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 from meridian.edge import RawStore
 
-from databento.settings import Credentials
-from databento.vendor import Historical, RateLimiter, Response, VendorError, iso_ns
+from plugin_databento.settings import Credentials
+from plugin_databento.vendor import Historical, RateLimiter, Response, VendorError, iso_ns
 
 from conftest import KEY
 

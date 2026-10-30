@@ -15,12 +15,12 @@ from meridian.edge import RawStore
 from meridian.plugin.v1 import operations_pb2 as ops
 from meridian.suites import Recorder
 
-from databento.convert import NEW_YORK
-from databento.lake import Lake, Products
-from databento.settings import REAL_TIME, Credentials
-from databento.source import DatabentoSource, gateway_replay
-from databento.synthetic import SyntheticGateway, SyntheticTransport, connect, exchange
-from databento.vendor import NS, Historical, RateLimiter
+from plugin_databento.convert import NEW_YORK
+from plugin_databento.lake import Lake, Products
+from plugin_databento.settings import REAL_TIME, Credentials
+from plugin_databento.source import DatabentoSource, gateway_replay
+from plugin_databento.synthetic import SyntheticGateway, SyntheticTransport, connect, exchange
+from plugin_databento.vendor import NS, Historical, RateLimiter
 
 SPY, BRK, TQQQ, ISIN_ONLY = "LCL-SPY", "LCL-BRK", "LCL-TQQQ", "LCL-ISIN"
 OTHER = "snaptrade"
@@ -216,7 +216,7 @@ def declines_the_lake_takes(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.fixture
 def restore_parse() -> Any:
-    import databento.vendor as vendor
+    import plugin_databento.vendor as vendor
 
     held = vendor.parse
     yield

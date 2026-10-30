@@ -13,10 +13,10 @@ from typing import Any
 import pytest
 from meridian.edge import RawStore
 
-from databento import gateway
-from databento.settings import Credentials
-from databento.stream import DatabentoFeed, Streamer
-from databento.synthetic import SyntheticGateway, connect, connect_async
+from plugin_databento import gateway
+from plugin_databento.settings import Credentials
+from plugin_databento.stream import DatabentoFeed, Streamer
+from plugin_databento.synthetic import SyntheticGateway, connect, connect_async
 
 from conftest import KEY
 

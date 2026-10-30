@@ -13,13 +13,13 @@ from pathlib import Path
 import pytest
 from meridian.declaration import main
 
-from databento import declaration as version
-from databento.declared import CATALOGUE
-from databento.lake import US_EQUITY_CALENDAR
-from databento.settings import SETTINGS
+from plugin_databento import declaration as version
+from plugin_databento.declared import CATALOGUE
+from plugin_databento.lake import US_EQUITY_CALENDAR
+from plugin_databento.settings import SETTINGS
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMED = "databento.declaration:DECLARATION"
+NAMED = "plugin_databento.declaration:DECLARATION"
 SECTIONS = ["overview", "setup", "troubleshooting", "terms", "pages"]
 
 

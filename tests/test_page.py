@@ -13,10 +13,10 @@ import pytest
 from meridian.suites import Recorder
 from meridian.testing import PageClient
 
-from databento.lake import LIVE_KINDS, TRADES, Standing
-from databento.page import CONNECTION, DATASETS, State, figures, pages, use
-from databento.settings import END_OF_DAY, REAL_TIME, Config, Credentials
-from databento.stream import Streamer
+from plugin_databento.lake import LIVE_KINDS, TRADES, Standing
+from plugin_databento.page import CONNECTION, DATASETS, State, figures, pages, use
+from plugin_databento.settings import END_OF_DAY, REAL_TIME, Config, Credentials
+from plugin_databento.stream import Streamer
 
 from conftest import RECORDS, SPY, Clock, answer_calendar, answer_records, at, synthetic_lake
 

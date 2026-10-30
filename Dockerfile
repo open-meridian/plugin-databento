@@ -20,4 +20,4 @@ RUN --mount=type=bind,target=/tmp/src,rw pip install --no-cache-dir /tmp/src
 # reads it there when `meridian plugin upload` prints the declaration.
 COPY docs/ docs/
 USER 65532
-CMD ["databento"]
+CMD ["plugin_databento"]

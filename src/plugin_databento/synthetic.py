@@ -52,7 +52,9 @@ def exchange(path: Path | None = None) -> dict[str, Any]:
     if path is not None:
         loaded: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         return loaded
-    text = resources.files("databento").joinpath("synthetic/exchange.json").read_text("utf-8")
+    text = (
+        resources.files("plugin_databento").joinpath("synthetic/exchange.json").read_text("utf-8")
+    )
     built: dict[str, Any] = json.loads(text)
     return built
 

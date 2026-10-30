@@ -7,8 +7,8 @@ from __future__ import annotations
 import datetime as dt
 from decimal import Decimal
 
-from databento import convert
-from databento.convert import Contract, Numbering
+from plugin_databento import convert
+from plugin_databento.convert import Contract, Numbering
 
 HD = {"ts_event": "1791572400000000000", "rtype": 0, "publisher_id": 22, "instrument_id": 7}
 

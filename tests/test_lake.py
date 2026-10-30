@@ -12,8 +12,8 @@ from meridian.operations import as_decimal as d
 from meridian.plugin.v1 import operations_pb2 as ops
 from meridian.suites import Recorder
 
-from databento.convert import utc_midnight
-from databento.settings import END_OF_DAY
+from plugin_databento.convert import utc_midnight
+from plugin_databento.settings import END_OF_DAY
 
 from conftest import (
     BRK,
@@ -256,7 +256,7 @@ async def test_a_chains_quotes_from_a_replay(tmp_path: Path) -> None:
 
 
 async def test_option_trades_streamed_for_a_standing_want(tmp_path: Path) -> None:
-    from databento import convert
+    from plugin_databento import convert
 
     recorder, lake = made(tmp_path, DURING)
     first = friday(DURING)

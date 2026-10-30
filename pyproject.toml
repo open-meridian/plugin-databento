@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "databento"
+name = "plugin_databento"
 version = "0.1.0"
 description = "Databento's US equity and OPRA option market data in an Open Meridian deployment's lake"
 license = { text = "Apache-2.0" }
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-databento = "databento.__main__:main"
+plugin_databento = "plugin_databento.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -38,7 +38,7 @@ where = ["src"]
 # The pages' templates and the synthetic exchange, installed beside the code
 # that reads them.
 [tool.setuptools.package-data]
-databento = ["templates/*.html", "synthetic/*.json"]
+plugin_databento = ["templates/*.html", "synthetic/*.json"]
 
 # What this plugin says about itself, which `meridian plugin upload` sends and
 # a deployment admin approves before it runs (W8). Declarations, not grants.
@@ -54,7 +54,7 @@ interface = true
 # Its declaration: its catalogue (the datasets it serves the lake), its
 # settings, one of them secret, the storage it asks for, its pages and its
 # documentation.
-declaration = "databento.declaration:DECLARATION"
+declaration = "plugin_databento.declaration:DECLARATION"
 
 [tool.ruff]
 line-length = 100
@@ -64,7 +64,7 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["databento"]
+known-first-party = ["plugin_databento"]
 known-local-folder = ["conftest"]
 
 [tool.mypy]

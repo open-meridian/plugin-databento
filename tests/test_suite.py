@@ -34,8 +34,8 @@ from meridian.plugin.v1 import operations_pb2 as ops
 from meridian.roles.data.testing import RATES_CASES, feed_delay, lake_query
 from meridian.suites import Recorder, run
 
-from databento import convert
-from databento.lake import LIVE_KINDS, Standing
+from plugin_databento import convert
+from plugin_databento.lake import LIVE_KINDS, Standing
 
 from conftest import (
     BRK,
@@ -289,8 +289,8 @@ def producers(tmp: Path) -> dict[str, Producer]:
         await wanted(recorder, want(ISIN_ONLY, business_date=DAY))
 
     async def licences(recorder: Recorder) -> None:
-        from databento.__main__ import read_licences
-        from databento.page import State
+        from plugin_databento.__main__ import read_licences
+        from plugin_databento.page import State
 
         recorder.answer(
             "ListDatasets",

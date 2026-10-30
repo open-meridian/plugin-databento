@@ -12,7 +12,7 @@ sample data last.
   (CRAM) instead; never in an address, a log line, a page or a raw record.
   `Credentials` keeps it out of its repr; the Connection page says whether it
   is set, never what it is. Its name follows the data plugins' (the vendor's,
-  then what it is: `massive_api_key`, `tiingo_api_token`). Name proposed.
+  then what it is: `massive_api_key`, `tiingo_api_token`). Approved 915-917.
 - **Stocks plan** (`stocks_timeliness`) and **Options plan**
   (`options_timeliness`), each a choice: what the key reaches of that asset
   class -- `real_time` (the live gateway: a Standard, Plus or Unlimited plan

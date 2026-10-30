@@ -1,8 +1,8 @@
 """The pages on sample data, each printed as one HTML file: for looking at
 them without a deployment.
 
-    python -m databento.preview connection > preview/connection.html
-    python -m databento.preview datasets > preview/datasets.html
+    python -m plugin_databento.preview connection > preview/connection.html
+    python -m plugin_databento.preview datasets > preview/datasets.html
 
 The lake's half runs on the SDK's lake as a test stands it in, in place of a
 sidecar, against the built-in exchange: SPY's close, live prices and chain

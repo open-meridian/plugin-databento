@@ -33,6 +33,9 @@ its public historical API and live gateway, on open-meridian 0.33.3
   answer to its challenge.
 - **Sample data:** Databento's documented record shapes with every value
   invented, its historical API and live gateway both. No key needed.
+- **Its Python package and command are `plugin_databento`** (rulings
+  915 to 917), so they never shadow Databento's own client library; the
+  plugin, its datasets and its source strings keep the name `databento`.
 - The data role's two pages, Connection and Datasets, each a read tool; the
   data suite, 22 cases presented; the e2e on the plugin harness of core
   8def82a.

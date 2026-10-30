@@ -136,7 +136,7 @@ image:
 	@[ "$$(docker inspect -f '{{.Config.User}}' $(IMAGE))" = "65532" ] \
 		|| { echo "image FAILED: it does not run as 65532" >&2; exit 1; }
 	@docker run --rm --entrypoint python $(IMAGE) -c \
-		"import meridian, databento.__main__, databento.page; from databento.synthetic import exchange; assert exchange()['daily']" \
+		"import meridian, plugin_databento.__main__, plugin_databento.page; from plugin_databento.synthetic import exchange; assert exchange()['daily']" \
 		|| { echo "image FAILED: it does not import the SDK, itself and its synthetic exchange" >&2; exit 1; }
 	@[ "$$(docker run --rm --entrypoint sh $(IMAGE) -c 'ls -A /plugin')" = "docs" ] \
 		|| { echo "image FAILED: /plugin holds files beyond docs/; only the installed package and its documentation belong" >&2; exit 1; }
@@ -174,7 +174,7 @@ preview:
 		|| { echo "preview FAILED to build" >&2; exit 1; }
 	@mkdir -p preview
 	@for page in connection datasets connection-no-key datasets-no-key; do \
-		docker run --rm $(CHECK) python -m databento.preview $$page >preview/$$page.html || exit 1; \
+		docker run --rm $(CHECK) python -m plugin_databento.preview $$page >preview/$$page.html || exit 1; \
 	done
 	@echo "preview: preview/connection.html, preview/datasets.html, and the -no-key pages"
 	@if [ -n "$(SHOTS)" ]; then \

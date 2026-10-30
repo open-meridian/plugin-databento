@@ -1,7 +1,7 @@
 """`make e2e`: the plugin on core's plugin harness, on sample data, with no key
 (the harness's README). Its answers are the synthetic exchange shaped on
 Databento's documented records, every value invented
-(src/databento/synthetic/exchange.json): its historical API and its live
+(src/plugin_databento/synthetic/exchange.json): its historical API and its live
 gateway both; Databento itself answers nowhere (the e2e's hosts file).
 
 Two plugins, from the same image: `databento`, this one; and `reader`
