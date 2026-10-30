@@ -1,0 +1,25 @@
+{#- Connection, at admin: the data role's (meridian/roles/data/connection.html),
+    one group at a time under its tab row (Key, Limits and use, Stream, and
+    Sessions once measured), with Databento's nuance at its blocks only -- the
+    head's status, the host asked, each asset class's plan under "Key", the
+    records returned and the live replays made under "Limits and use", and
+    each dataset's live session under "Stream". Never the key's value; no
+    market data. -#}
+{% extends "meridian/roles/data/connection.html" %}
+{% import "meridian/roles/_rows.html" as om %}
+{% block status %}{% set head = connection_status(data) %}<om-status data-om-header state="{{ head.state }}" label="{{ head.label }}">{{ head.label }}</om-status>{% endblock %}
+{% block vendor_notices %}
+<p class="muted wide-only">{% if data.mode == "Live" %}{{ data.detail }} {% endif %}{% if data.host %}Asked at {{ data.host }}.{% endif %}</p>
+{% endblock %}
+{% block vendor_rows %}
+{% if section == "Key" %}
+{{ om.row("Stocks plan", data.stocks_plan, "as Settings say it") }}
+{{ om.row("Options plan", data.options_plan, "as Settings say it") }}
+{% elif section == "Limits and use" and data.mode != "No key" %}
+{{ om.row("Records returned", data.records ~ " historical, " ~ data.replays ~ " live replays", "since start") }}
+{% elif section == "Stream" %}
+{% for s in data.streams %}
+{{ om.row(s.asset_class|capitalize, s.state|capitalize, ((s.subscribed ~ " streamed, since " ~ (s.since|shown)) if s.state == "streaming" else (s.last_error or s.host))) }}
+{% endfor %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+# The e2e's hosts file, mounted over the plugin's /etc/hosts (e2e/plugin.yaml):
+# Databento answers nowhere, so the run never reads Databento's live service
+# and no key is ever needed or sent.
+127.0.0.1 localhost
+::1 localhost
+127.0.0.1 hist.databento.com
+127.0.0.1 equs-mini.lsg.databento.com
+127.0.0.1 opra-pillar.lsg.databento.com
+127.0.0.1 equs-summary.lsg.databento.com

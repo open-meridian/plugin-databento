@@ -1,0 +1,67 @@
+{
+  "_about": "Databento's documented record shapes with every value invented, for sample data, the tests and the e2e. Never a real record. Prices are text, as Databento's JSON encoding writes them with pretty_px.",
+  "instruments": {"SPY": 15144, "BRK.B": 2210, "TQQQ": 31002},
+  "reach": {"start": "2023-03-28T00:00:00.000000000Z"},
+  "daily": {
+    "SPY": [
+      {"date": "2026-10-05", "open": "665.100000000", "high": "668.920000000", "low": "664.010000000", "close": "667.550000000", "volume": "61204310"},
+      {"date": "2026-10-06", "open": "667.800000000", "high": "669.400000000", "low": "665.120000000", "close": "668.030000000", "volume": "58830122"},
+      {"date": "2026-10-07", "open": "668.110000000", "high": "672.030000000", "low": "667.950000000", "close": "670.880000000", "volume": "64400200"},
+      {"date": "2026-10-08", "open": "670.500000000", "high": "673.210000000", "low": "669.700000000", "close": "671.420000000", "volume": "59120455"},
+      {"date": "2026-10-09", "open": "671.600000000", "high": "674.480000000", "low": "670.330000000", "close": "673.900000000", "volume": "62011870"}
+    ],
+    "BRK.B": [
+      {"date": "2026-10-05", "open": "485.200000000", "high": "487.950000000", "low": "484.100000000", "close": "486.400000000", "volume": "3404211"},
+      {"date": "2026-10-06", "open": "486.500000000", "high": "488.300000000", "low": "485.700000000", "close": "487.120000000", "volume": "3120983"},
+      {"date": "2026-10-07", "open": "487.000000000", "high": "489.440000000", "low": "486.210000000", "close": "488.950000000", "volume": "3398120"},
+      {"date": "2026-10-08", "open": "488.900000000", "high": "490.010000000", "low": "487.330000000", "close": "488.170000000", "volume": "3655812"},
+      {"date": "2026-10-09", "open": "488.200000000", "high": "491.050000000", "low": "487.900000000", "close": "490.620000000", "volume": "3550402"}
+    ],
+    "TQQQ": [
+      {"date": "2026-10-05", "open": "90.100000000", "high": "91.550000000", "low": "89.800000000", "close": "91.020000000", "volume": "41020110"},
+      {"date": "2026-10-06", "open": "91.000000000", "high": "92.100000000", "low": "90.420000000", "close": "91.770000000", "volume": "39811020"},
+      {"date": "2026-10-07", "open": "91.800000000", "high": "93.400000000", "low": "91.550000000", "close": "93.010000000", "volume": "44120334"},
+      {"date": "2026-10-08", "open": "93.000000000", "high": "93.620000000", "low": "92.400000000", "close": "92.850000000", "volume": "40555012"},
+      {"date": "2026-10-09", "open": "92.900000000", "high": "93.950000000", "low": "92.710000000", "close": "93.123456789", "volume": "42004500"}
+    ]
+  },
+  "bbo": {
+    "SPY": {"offset_ms": -20000, "sale_offset_ms": -21000, "price": "673.880000000", "size": 100, "side": "N", "bid_px": "673.870000000", "bid_sz": 300, "ask_px": "673.890000000", "ask_sz": 200},
+    "BRK.B": {"offset_ms": -20000, "sale_offset_ms": -25000, "price": "490.600000000", "size": 20, "side": "N", "bid_px": "490.580000000", "bid_sz": 100, "ask_px": null, "ask_sz": 0},
+    "TQQQ": {"offset_ms": -20000, "sale_offset_ms": -22000, "price": "93.120000000", "size": 500, "side": "N", "bid_px": "93.110000000", "bid_sz": 1200, "ask_px": "93.130000000", "ask_sz": 900}
+  },
+  "trades": {
+    "SPY": [
+      {"offset_ms": -60000, "price": "673.800000000", "size": 100, "side": "N"},
+      {"offset_ms": -60000, "price": "673.810000000", "size": 7, "side": "B"},
+      {"offset_ms": -59960, "price": "673.820000000", "size": 300, "side": "A"},
+      {"offset_ms": -59920, "price": "673.830000000", "size": 50, "side": "N"}
+    ]
+  },
+  "stream": {
+    "stocks": [
+      {"schema": "bbo-1s", "symbol": "SPY", "offset_ms": 0, "sale_offset_ms": -2000, "price": "673.880000000", "size": 100, "side": "N", "bid_px": "673.870000000", "bid_sz": 300, "ask_px": "673.890000000", "ask_sz": 200},
+      {"schema": "trades", "symbol": "SPY", "offset_ms": 5, "price": "673.880000000", "size": 100, "side": "N"},
+      {"schema": "trades", "symbol": "SPY", "offset_ms": 5, "price": "673.890000000", "size": 7, "side": "N"},
+      {"schema": "trades", "symbol": "SPY", "offset_ms": 12, "price": "673.900000000", "size": 10, "side": "A"},
+      {"schema": "bbo-1s", "symbol": "BRK.B", "offset_ms": 14, "sale_offset_ms": -3000, "price": "490.600000000", "size": 20, "side": "N", "bid_px": "490.580000000", "bid_sz": 100, "ask_px": null, "ask_sz": 0},
+      {"schema": "trades", "symbol": "BRK.B", "offset_ms": 16, "price": "490.610000000", "size": 20, "side": "N"}
+    ],
+    "options": [
+      {"offset_ms": 0, "price": "8.150000000", "size": 3, "publisher_id": 22},
+      {"offset_ms": 4, "price": "8.160000000", "size": 12, "publisher_id": 36},
+      {"offset_ms": 8, "price": "8.140000000", "size": 5, "publisher_id": 999}
+    ]
+  },
+  "options": {
+    "SPY": {
+      "_about": "Expirations are the first and second Fridays after the day asked, so a chain is always current; each series' values follow from its right. SPY1 is an adjusted root; the 680 put's definition states no CFI.",
+      "strikes": ["665", "670", "675"],
+      "quote": {"call": {"bid": "8.100000000", "ask": "8.200000000", "bid_size": 40, "ask_size": 35}, "put": {"bid": "4.050000000", "ask": "4.150000000", "bid_size": 25, "ask_size": 30}},
+      "open_interest": {"call": 1543, "put": 2210},
+      "volume": {"call": 868, "put": 1204},
+      "adjusted": {"root": "SPY1", "strike": "670", "multiplier": "100.000000000"},
+      "no_cfi": {"right": "put", "strike": "680"}
+    }
+  }
+}
