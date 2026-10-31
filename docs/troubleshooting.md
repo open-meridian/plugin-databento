@@ -42,4 +42,5 @@ known; **Datasets** counts it as not converted.
 
 The deployment's US equity calendar did not answer, so the market day it is
 for is not known. **Datasets** says why. Series and quotes are recorded
-meanwhile.
+meanwhile. The plugin asks the calendar again after 30 seconds, then less
+often, at least every 15 minutes, until it answers.

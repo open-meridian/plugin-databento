@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.1 (2026-10-30)
+
+A bug fix (ruling 926), until the SDK's own calendar helper replaces it
+(924).
+
+- **A failed calendar read is tried again:** where the deployment's US
+  equity calendar did not answer (or was not found), the read is made again
+  after 30 seconds, the wait doubling to at most 15 minutes, until it
+  answers. Before, one failed read left that span's open interest and
+  volume undated until the next day.
+
 ## 0.1.0 (2026-10-30)
 
 The first version: Databento's US equity and OPRA option market data from

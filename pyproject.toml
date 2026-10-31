@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "plugin-databento"
-version = "0.1.0"
+version = "0.1.1"
 description = "Databento's US equity and OPRA option market data in an Open Meridian deployment's lake"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
