@@ -53,7 +53,7 @@ from .settings import Credentials
 API = "https://hist.databento.com"
 HOST = "hist.databento.com"
 VERSION = "v0"
-USER_AGENT = "meridian-databento/0.1.0 (+https://open-meridian.dev)"
+USER_AGENT = "meridian-databento/0.1.1 (+https://open-meridian.dev)"
 NS = 1_000_000_000
 
 #: Databento's datasets this plugin reads (databento.com/docs/venues-and-datasets).

@@ -53,7 +53,7 @@ from .settings import Credentials
 
 PORT = 13000
 DOMAIN = "lsg.databento.com"
-CLIENT = "meridian-databento 0.1.0"
+CLIENT = "meridian-databento 0.1.1"
 #: The most symbols one subscription line names: Databento's advice.
 SYMBOLS_PER_LINE = 500
 #: The gateway's heartbeat asked for, in seconds (5 to 1800).

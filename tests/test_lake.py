@@ -8,10 +8,12 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+from meridian.errors import MeridianError
 from meridian.operations import as_decimal as d
 from meridian.plugin.v1 import operations_pb2 as ops
 from meridian.suites import Recorder
 
+from plugin_databento.chains import CALENDAR_RETRY_MOST_SECONDS, NS
 from plugin_databento.convert import utc_midnight
 from plugin_databento.settings import END_OF_DAY
 
@@ -25,6 +27,7 @@ from conftest import (
     answer_calendar,
     answer_records,
     at,
+    calendar,
     calls,
     synthetic_lake,
     want,
@@ -283,3 +286,41 @@ async def test_tqqq_another_sources_record(tmp_path: Path) -> None:
     await ask(lake, recorder, want(TQQQ, business_date=DAY))
     (price,) = recorded(recorder, "RecordPrices", "prices")
     assert d(price.price.amount) == Decimal("92.850000000")
+
+
+async def test_a_failed_calendar_read_is_tried_again_after_a_backoff(tmp_path: Path) -> None:
+    recorder, lake = made(tmp_path)
+    failing = [True]
+
+    def reply(params: Any) -> Any:
+        if failing[0]:
+            raise MeridianError("the sidecar did not answer")
+        return calendar(params)
+
+    recorder.answer("ReadCalendar", reply)
+    chains, clock = lake.chains, lake.clock_ns
+    friday = dt.date(2026, 10, 9)
+
+    def read() -> int:
+        return len(calls(recorder, "ReadCalendar"))
+
+    assert await chains.is_open(friday) is None and "was not read" in chains.calendar_error
+    assert read() == 1
+    clock.now += 10 * NS  # within the first backoff: not read again
+    assert await chains.is_open(friday) is None and read() == 1
+    clock.now += 21 * NS  # past it: read again, failing again
+    assert await chains.is_open(friday) is None and read() == 2
+    clock.now += 31 * NS  # the backoff doubled to a minute
+    assert await chains.is_open(friday) is None and read() == 2
+    failing[0] = False
+    clock.now += 30 * NS
+    assert await chains.is_open(friday) is True and read() == 3
+    assert chains.calendar_error == "" and chains.calendar_failures == 0
+
+
+def test_the_calendar_backoff_is_bounded(tmp_path: Path) -> None:
+    _, lake = made(tmp_path)
+    chains = lake.chains
+    for _ in range(40):
+        chains._calendar_failed("the calendar was not read")
+    assert chains.calendar_retry_ns - lake.clock_ns() == CALENDAR_RETRY_MOST_SECONDS * NS
