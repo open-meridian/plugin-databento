@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.1.2 (2026-10-30)
+## 0.1.2
 
 SDK 0.33.4: raw-record writes and enum conversion fixes (ruling 937).
 
 - **The pins:** open-meridian 0.33.3 to 0.33.4, and plugin-python:0.33.4 by tag
   and digest (`meridian plugin migrate --to 0.33.4`: only the pins move).
 
-## 0.1.1 (2026-10-30)
+## 0.1.1
 
 A bug fix (ruling 926), until the SDK's own calendar helper replaces it
 (924).
@@ -18,7 +18,7 @@ A bug fix (ruling 926), until the SDK's own calendar helper replaces it
   answers. Before, one failed read left that span's open interest and
   volume undated until the next day.
 
-## 0.1.0 (2026-10-30)
+## 0.1.0
 
 The first version: Databento's US equity and OPRA option market data from
 its public historical API and live gateway, on open-meridian 0.33.3
