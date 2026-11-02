@@ -51,8 +51,8 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from meridian.edge import as_reported
+from meridian.helpers import chains as helpers
 from meridian.plugin.v1.operations_pb2 import AsReported
-from meridian.roles import chains as helpers
 
 NS = 1_000_000_000
 SOURCE = "databento"

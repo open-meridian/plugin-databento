@@ -113,22 +113,28 @@ def host(state: State) -> str:
     return urllib.parse.urlparse(state.historical.base).hostname or ""
 
 
+#: The supervisor's states in the page's words (SDK 0.35's
+#: `helpers.sessions.SessionState`): nothing wanted is idle, a session open
+#: is streaming; connecting, waiting, refused and no key as they are.
+SHOWN_STATES = {"off": "idle", "open": "streaming"}
+
+
 def _stream(asset: str, streamer: Streamer | None, plan: str, sample: bool) -> SessionRead:
     if plan != REAL_TIME:
         return SessionRead(asset, "", "does not stream on a historical-only plan")
     if streamer is None:
         return SessionRead(asset)
-    held = streamer.session
+    held = streamer.state
     return SessionRead(
         asset_class=asset,
         host="" if sample else streamer.host,
-        state=held.state,
-        subscribed=held.subscribed,
+        state=SHOWN_STATES.get(held.state, held.state),
+        subscribed=len(held.subscribed),
         opened=held.opened,
         reconnects=held.reconnects,
         messages=held.messages,
         since=_when(held.since_ns),
-        last_message_at=_when(held.last_message_at_ns),
+        last_message_at=_when(held.last_message_ns),
         last_error=held.last_error,
     )
 
@@ -443,9 +449,3 @@ async def datasets(request: meridian.Request) -> meridian.Response:
     # 375 pixels; the tool answers every one.
     drawn = replace(read, wants=read.wants[:SHOWN_WANTS])
     return pages.answer("datasets.html", drawn, wants=len(read.wants), served=len(read.served))
-
-
-def serve(plugin: meridian.Plugin, state: State, port: int) -> Any:
-    """Serve the pages on loopback beside the sidecar, reading `state`."""
-    use(state)
-    return pages.serve(plugin, port)

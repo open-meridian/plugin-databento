@@ -26,11 +26,12 @@ same way, a trade already recorded never sent again (the SDK's feed).
 **No venue for a stock.** Databento US Equities Mini anonymizes its venues,
 so a stock's price, quote or trade is recorded as consolidated, no venue.
 
-**The edge, done here for now** (contract v28, rulings 424 and 518): each
-live price, quote and trade recorded unasked or for a standing want has its
-feed delay recorded (`roles.Latency.aged`, the `edge` hop) and is judged by
-the SDK's quality checks (`quality.EdgeChecks`). The SDK's listings feed
-records neither in 0.33.3; this glue goes when it does.
+**The edge** (contract v28, rulings 424 and 518): each live price, quote
+and trade recorded unasked or for a standing want has its feed delay
+recorded (`roles.Latency.aged`, the `edge` hop) and is judged by the SDK's
+quality checks (`quality.EdgeChecks`) -- the SDK's listings feed's work from
+open-meridian 0.35 (`listings.at_the_edge`), `Lake.at_the_edge` telling it
+only that a chain's standing wants stand too.
 """
 
 from __future__ import annotations
@@ -106,7 +107,9 @@ class Lake(listings.Feed):
 
     # ── Plans and names ──────────────────────────────────────────────────
 
-    def timeliness(self, asset_class: str) -> str:
+    def plan_of(self, asset_class: str) -> str:
+        """What an asset class's plan reaches: `real_time` or a historical
+        one (the SDK's `timeliness` is one plan's; Databento's are two)."""
         return self.plans[asset_class]
 
     def use_plan(self, stocks: str, options: str) -> None:
@@ -126,10 +129,6 @@ class Lake(listings.Feed):
             source.gateway = {"stocks": stocks == REAL_TIME, "options": options == REAL_TIME}
         if before["options"] != options:
             self.chains.reset()
-
-    def named(self, key: str) -> str:
-        """A declared dataset's ID in the deployment, by its own key."""
-        return super().dataset(key)
 
     # ── What is Databento's (listings.Feed) ──────────────────────────────
 
@@ -151,34 +150,17 @@ class Lake(listings.Feed):
         # a trade is keyed by its clocks and place instead.
         return None
 
-    # ── The edge (contract v28) ──────────────────────────────────────────
+    # ── The edge (contract v28; the SDK's from 0.35) ─────────────────────
 
     def at_the_edge(self, key: str, rows: list[Any], want_id: str) -> list[Any]:
-        """Rows of the dataset `key` recorded unasked or for a standing
-        want, their age at the edge recorded and judged by the SDK's
-        checks; rows pulled for a read as they are. A chain's rows are
-        judged series by series (their subject is the underlying)."""
-        standing = {w.want_id for w in self.standing.values()}
+        """The SDK's edge (`listings.at_the_edge`: each row recorded unasked
+        or for a standing want aged and judged, a chain's within its
+        series), told that a chain's standing wants stand too."""
+        chained = set()
         for held in self.chains.underlyings.values():
-            standing |= set(held.standing) | set(held.trades)
-        if want_id and want_id not in standing:
-            return rows
-        dataset = self.named(key)
-        if self.latency is not None:
-            for row in rows:
-                self.latency.aged(dataset, "AGE_HOP_EDGE", row)
-        if key != OPTIONS:
-            return self.quality.judged(key, rows)
-        out: list[Any] = []
-        for row in rows:
-            series = row.meta.series_key[0].value if row.meta.series_key else ""
-            out.extend(self.quality.judged(f"{key}/{series}", [row]))
+            chained |= set(held.standing) | set(held.trades)
+        out: list[Any] = super().at_the_edge(key, rows, "" if want_id in chained else want_id)
         return out
-
-    async def _record(self, key: str, data_type: str, rows: Any, want_id: str) -> None:
-        if key in (LIVE, TRADES) and data_type in (PRICE, QUOTE, TRADE):
-            rows = self.at_the_edge(key, list(rows), want_id)
-        await super()._record(key, data_type, rows, want_id)
 
     # ── Wants ────────────────────────────────────────────────────────────
 
@@ -195,7 +177,7 @@ class Lake(listings.Feed):
             return "not_covered"
         return ""
 
-    async def on_want(self, heard: Any) -> None:
+    async def on_observations_wanted(self, heard: Any) -> None:
         """A want of a chain is chains.py's; one this plan does not serve is
         declined, not covered; any other is the SDK's to answer."""
         want: ops.ObservationsWantedEvent = heard.message
@@ -210,12 +192,12 @@ class Lake(listings.Feed):
             subjects = [s.entity_id for s in want.subjects]
             await self._decline(key, want.want_id, subjects, reason, settled=False)
             return
-        await super().on_want(heard)
+        await super().on_observations_wanted(heard)
 
-    async def on_withdrawn(self, heard: Any) -> None:
+    async def on_want_withdrawn(self, heard: Any) -> None:
         """A standing want withdrawn, a chain's among them."""
         self.chains.withdraw(heard.message.want_id)
-        await super().on_withdrawn(heard)
+        await super().on_want_withdrawn(heard)
 
     async def reference(self) -> None:
         """How far Databento's daily history reaches for the key, asked once

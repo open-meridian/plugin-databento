@@ -29,6 +29,7 @@ from conftest import (
     at,
     calendar,
     calls,
+    hear_row,
     synthetic_lake,
     want,
 )
@@ -64,7 +65,7 @@ def declined(recorder: Recorder) -> list[tuple[str, int]]:
 
 async def ask(lake: Any, recorder: Recorder, event: ops.ObservationsWantedEvent) -> None:
     recorder.answer("ObservationsWanted", lambda _: event)
-    await recorder.receive(observations_wanted=lake.on_want)
+    await hear_row(recorder, "ObservationsWanted", lake.on_observations_wanted)
 
 
 def made(tmp: Path, now: int = AFTER, **kwargs: Any) -> tuple[Recorder, Any]:

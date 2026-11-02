@@ -129,14 +129,15 @@ async def test_the_stream_hears_trades_and_quotes(tmp_path: Path) -> None:
     streamer = Streamer(feed, hear, flush, clock_ns=lambda: NOW, sleep=no_sleep, silent_seconds=0.3)
     streamer.want(["SPY"])
     # One session: heard, then silent past the heartbeat's time, so broken.
-    await asyncio.wait_for(streamer.run(sessions=1), 5.0)
-    assert "nothing heard" in streamer.session.last_error
+    # The SDK's supervisor (0.35): one session held.
+    await asyncio.wait_for(streamer.run(once=True), 5.0)
+    assert "nothing heard" in streamer.state.last_error
     trades = [h for h in heard if not hasattr(h, "bid")]
     quotes = [h for h in heard if hasattr(h, "bid")]
     assert len(trades) == 3 and len(quotes) == 1
     # Two prints with the same clocks: numbered apart.
     assert trades[0].place == 0 and trades[1].place == 1
-    assert streamer.session.opened == 1 and streamer.session.messages > 0
+    assert streamer.state.opened == 1 and streamer.state.messages > 0
     subscribed = [line for line in held.heard if line.startswith("schema=")]
     assert {gateway.fields(s)["schema"] for s in subscribed} == {"trades", "bbo-1s"}
     assert all("start" not in gateway.fields(s) for s in subscribed)
