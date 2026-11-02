@@ -1,7 +1,7 @@
 # databento
 
 Databento's US equity and OPRA option market data as an Open Meridian data
-plugin, in Python on the open-meridian SDK (0.33.3, contract v28). It runs
+plugin, in Python on the open-meridian SDK (0.35.2, contract v29). It runs
 beside a sidecar in a Meridian deployment and reads Databento's historical
 API and its live gateway's Raw API (databento.com/docs) with the account
 holder's own key, putting what it reads into the deployment's lake. What it
@@ -43,10 +43,11 @@ one dataset per timeliness.
 - `src/plugin_databento/lake.py`: the SDK's listings feed
   (`meridian.roles.data.listings.Feed`), this module keeping only what is
   Databento's: what each plan reaches, the history's reach, the stated
-  aggressor, and the edge's feed delay and quality checks (TEMPORARY until
-  the SDK's listings feed takes them over).
+  aggressor. The edge's feed delay and quality checks are the SDK's
+  listings feed's from open-meridian 0.35 (`listings.at_the_edge`);
+  `Lake.at_the_edge` tells it only that a chain's standing wants stand too.
 - `src/plugin_databento/chains.py`: option chains through the SDK's
-  `meridian.roles.chains` helpers, under the underlying and keyed by OCC OSI
+  `meridian.helpers.chains` helpers, under the underlying and keyed by OCC OSI
   symbol: never resolve, mint or request a series' record (561). Series and
   statistics from the history by parent symbol (`SPY.OPT`), the latest day
   it reaches (a past date's statistics the market day after it); quotes
@@ -55,8 +56,16 @@ one dataset per timeliness.
   recorded; option trades streamed for a standing want. Greeks are never
   read (the engine computes its own).
 - `src/plugin_databento/stream.py`: the live sessions, stocks (`EQUS.MINI`:
-  trades, `bbo-1s`) and options (`OPRA.PILLAR`: trades); one session per
-  dataset, reconnecting, every line kept first.
+  trades, `bbo-1s`) and options (`OPRA.PILLAR`: trades) over the plugin's
+  own gateway client (gateway.py; rulings 1027 and 1038); one session per
+  dataset, kept open by the SDK's supervisor (`Streamer`, a
+  `helpers.sessions.Supervisor`), every line kept first.
+- `src/plugin_databento/__main__.py`: the data role's class, `Market`
+  (lake.py's `Lake`, the SDK's listings feed; open-meridian 0.35),
+  registered with `meridian.run`, which applies the settings
+  (`Market.on_settings`), serves the pages, sets the figures and restarts
+  `Market.run` -- the two streams, the timetable, the licences and the
+  latency reports -- after a backoff should it fail.
 - `src/plugin_databento/page.py`, `records.py` and `templates/`: the data role's
   two pages under Manage, Connection and Datasets, each a read tool
   (`read_connection`, `read_datasets`). The templates extend the role's and
@@ -111,8 +120,8 @@ sidecar in a Meridian deployment and reaches nothing else: what it may publish
 and subscribe to comes from the roles `pyproject.toml` declares under
 `[tool.meridian]`, once a deployment admin approves them.
 
-- `src/plugin_databento/__main__.py` connects to the sidecar and serves the
-  pages; `src/plugin_databento/page.py` declares them, each a view function
+- `src/plugin_databento/__main__.py` runs the plugin (`meridian.run`) and
+  serves the pages; `src/plugin_databento/page.py` declares them, each a view function
   and a template under `templates/`, built on the plugin UI kit (below).
 - A save changes what the plugin does, never what it is allowed to do. Roles
   and dependencies take a new version, which a person approves.

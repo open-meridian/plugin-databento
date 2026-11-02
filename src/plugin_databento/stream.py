@@ -15,9 +15,11 @@ the same session; a listing let go closes the session and opens another
 for what is still wanted, as the gateway takes no unsubscription a client
 can rely on.
 
-**Reconnect.** A session that breaks, closes, errs fatally or says nothing
+**Reconnect**, the SDK's supervisor's from 0.2.0 (`helpers.sessions`,
+ruling 1027). A session that breaks, closes, errs fatally or says nothing
 for a heartbeat and ten seconds (`SILENT_SECONDS`, Databento's own advice)
-is opened again a second later, then doubling to a minute; the
+is opened again a second later, then doubling to a minute, each wait within
+a fifth of itself; the
 subscriptions are sent again from what is wanted. The gap is caught up by
 the SDK's feed from the history and the gateway's intraday replay, a trade
 recorded already never sent again (lake.py). A refused key waits
@@ -31,15 +33,13 @@ before anything converts it; the key is never in one (it is never sent).
 
 from __future__ import annotations
 
-import asyncio
-import contextlib
 import logging
 import time
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from meridian.edge import RawStore
+from meridian.helpers import sessions
 
 from . import convert, gateway
 from .settings import Credentials
@@ -163,178 +163,61 @@ class DatabentoFeed:
         await self.session.close()
 
 
-@dataclass
-class Session:
-    """A stream as the Connection page shows it: never a key."""
-
-    state: str = "idle"
-    subscribed: int = 0
-    opened: int = 0
-    reconnects: int = 0
-    messages: int = 0
-    last_message_at_ns: int = 0
-    last_error: str = ""
-    since_ns: int = 0
-    symbols: list[str] = field(default_factory=list)
-
-
-class Restart(Exception):
-    """The settings changed: the session is closed and opened again."""
-
-
-class Streamer:
-    """Keeps one session open while anything is wanted, subscribed to what
-    is; hands what it hears to `heard`, and flushes with `flush`."""
+class Streamer(sessions.Supervisor):
+    """One of Databento's live gateways kept open by the SDK's supervisor
+    (open-meridian 0.35, ruling 1027: `helpers.sessions.Supervisor` over the
+    plugin's own feed, its `Link`): one session while anything is wanted,
+    subscribed to what is; what it hears handed to `heard` and flushed with
+    `flush`; after a reopen, the gap since each listing was last heard
+    handed to `caught_up` (the history and the gateway's intraday replay). A refused key is
+    waited out `REFUSED_WAIT`; any other break the supervisor's backoff,
+    a second doubling to a minute. Every line is handed on, one that
+    converted to nothing (a heartbeat, a system message) as an empty list:
+    the feed's sign of life. What the gateway says of a slow reader or an
+    error it does not end the session on (the feed's `said`) is the
+    session's last error, the session kept."""
 
     def __init__(
         self,
         make_feed: Callable[[], Feed | None],
-        heard: Callable[[list[Any]], Awaitable[None]],
-        flush: Callable[[], Awaitable[None]],
-        clock_ns: Callable[[], int] = time.time_ns,
-        sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
-        silent_seconds: float = SILENT_SECONDS,
+        heard: Callable[[list[Any]], Awaitable[Any]],
+        flush: Callable[[], Awaitable[Any]],
+        **kwargs: Any,
     ) -> None:
-        self.make_feed, self.heard, self.flush = make_feed, heard, flush
-        self.clock_ns, self.sleep, self.silent_seconds = clock_ns, sleep, silent_seconds
-        self.wanted: list[str] = []
-        self.session = Session()
+        self._feed: Feed | None = None
+        self._handed = 0
+        #: The gateway the last session was made for, for the Connection page.
         self.host = ""
-        self._changed = asyncio.Event()
-        self._restart = False
-        #: Called each time a session opens anew after the first, with the
-        #: moment the last one was last heard: the gap to catch up.
-        self.reopened: Callable[[int], Awaitable[None]] | None = None
 
-    def want(self, symbols: Sequence[str]) -> None:
-        """Stream these, and only these, from now on."""
-        if list(symbols) != self.wanted:
-            self.wanted = list(symbols)
-            self._changed.set()
+        def made() -> Feed | None:
+            self._feed = make_feed()
+            if self._feed is not None:
+                self.host = str(getattr(self._feed, "host", ""))
+            return self._feed
 
-    def restart(self) -> None:
-        """Open the session again: the key or the plan changed."""
-        self._restart = True
-        self._changed.set()
+        async def told(stated: list[Any]) -> None:
+            self._handed = self.state.messages
+            await heard(stated)
 
-    async def _idle(self, state: str) -> None:
-        self.session.state = state
-        self.session.subscribed, self.session.symbols = 0, []
-        self._changed.clear()
-        self._restart = False
-        await self._changed.wait()
+        async def flushed() -> None:
+            # A message that converted to nothing (a status) is still the
+            # stream's sign of life: handed on empty, as each was before.
+            if self._handed != self.state.messages:
+                self._handed = self.state.messages
+                await heard([])
+            said = getattr(self._feed, "said", "")
+            if said:
+                self.state.last_error = said
+            await flush()
 
-    async def run(self, sessions: int | None = None) -> None:
-        """Forever (or for `sessions` sessions, in the tests)."""
-        wait = FIRST_WAIT
-        held = 0
-        while sessions is None or held < sessions:
-            if not self.wanted:
-                await self._idle("idle")
-                continue
-            feed = self.make_feed()
-            if feed is None:
-                await self._idle("no key")
-                continue
-            held += 1
-            self._restart = False
-            self.host = str(getattr(feed, "host", ""))
-            try:
-                await self._session(feed)
-                wait = FIRST_WAIT
-                continue
-            except Restart:
-                wait = FIRST_WAIT
-                continue
-            except gateway.Refused as refused:
-                self.session.state, self.session.last_error = "refused", f"refused: {refused}"
-                log.warning("Databento refused the stream: %s", refused)
-                await self._pause(REFUSED_WAIT)
-                continue
-            except (gateway.GatewayError, OSError, TimeoutError, ValueError) as broken:
-                self.session.last_error = f"{type(broken).__name__}: {broken}"[:300]
-                log.warning("the stream stopped: %s", self.session.last_error)
-            finally:
-                await feed.close()
-            self.session.reconnects += 1
-            self.session.state = "waiting"
-            await self._pause(wait)
-            wait = min(wait * 2, MOST_WAIT)
-
-    async def _pause(self, seconds: float) -> None:
-        """Wait, or less where what is wanted changes meanwhile."""
-        if self._restart:
-            return
-        changed = asyncio.ensure_future(self._changed.wait())
-        slept = asyncio.ensure_future(self.sleep(seconds))
-        try:
-            await asyncio.wait({changed, slept}, return_when=asyncio.FIRST_COMPLETED)
-        finally:
-            changed.cancel()
-            slept.cancel()
-
-    async def _session(self, feed: Feed) -> None:
-        self.session.state = "connecting"
-        await feed.open()
-        last_heard = self.session.last_message_at_ns
-        self.session.opened += 1
-        self.session.since_ns = self.clock_ns()
-        self._changed.clear()
-        await feed.subscribe(self.wanted)
-        self._note_subscribed()
-        self.session.state = "streaming"
-        if self.session.opened > 1 and last_heard and self.reopened is not None:
-            await self.reopened(last_heard)
-        pending: asyncio.Future[list[Any]] | None = None
-        quiet_since = time.monotonic()
-        try:
-            while True:
-                if pending is None:
-                    pending = asyncio.ensure_future(feed.receive())
-                changed: asyncio.Future[Any] = asyncio.ensure_future(self._changed.wait())
-                done, _ = await asyncio.wait(
-                    {pending, changed}, timeout=FLUSH_SECONDS, return_when=asyncio.FIRST_COMPLETED
-                )
-                if changed in done:
-                    self._changed.clear()
-                    if self._restart:
-                        raise Restart()
-                    if not self.wanted:
-                        return
-                    if pending is not None and not pending.done():
-                        # The session may be opened again to let a listing go:
-                        # the read in flight is of the session being closed.
-                        pending.cancel()
-                        with contextlib.suppress(BaseException):
-                            await pending
-                        pending = None
-                    await feed.subscribe(self.wanted)
-                    self._note_subscribed()
-                else:
-                    changed.cancel()
-                if pending is not None and pending in done:
-                    stated = pending.result()
-                    pending = None
-                    quiet_since = time.monotonic()
-                    now = self.clock_ns()
-                    self.session.messages += 1
-                    self.session.last_message_at_ns = now
-                    said = getattr(feed, "said", "")
-                    if said:
-                        self.session.last_error = said
-                    await self.heard(stated)
-                elif time.monotonic() - quiet_since > self.silent_seconds:
-                    raise gateway.GatewayError(
-                        f"nothing heard for {self.silent_seconds:.0f} seconds"
-                    )
-                await self.flush()
-        finally:
-            if pending is not None:
-                pending.cancel()
-                with contextlib.suppress(BaseException):
-                    await pending
-            await self.flush()
-
-    def _note_subscribed(self) -> None:
-        self.session.subscribed = len(self.wanted)
-        self.session.symbols = list(self.wanted)
+        kwargs.setdefault("silent_seconds", SILENT_SECONDS)
+        kwargs.setdefault("backoff", sessions.Backoff(first_s=FIRST_WAIT, most_s=MOST_WAIT))
+        super().__init__(
+            made,
+            heard=told,
+            flush=flushed,
+            refused=(gateway.Refused,),
+            refused_seconds=REFUSED_WAIT,
+            flush_seconds=FLUSH_SECONDS,
+            **kwargs,
+        )
