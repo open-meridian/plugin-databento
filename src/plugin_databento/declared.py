@@ -37,21 +37,18 @@ the terms' `underlying_source` (ruling 896), each also names it there; its
 `price_source_class` (906) is TRADED for daily and trades and FIRM_QUOTE for
 the quotes, once the amendment carries it.
 
-**The terms Databento's licensing imposes** (`licence_default`), which the
-deployment's admin confirms or replaces on Data sources -- never whether a
-deployment meets them. Databento passes each venue's licence through:
-Databento US Equities Mini carries no venue licence fee, for personal and
-commercial use alike; OPRA's live data is licensed per device for a
-person's own use, and for a firm by OPRA's own agreement. The defaults:
-shown to people (`display`), derived data for internal use only
-(`internal_only`), never redistributed (`not_allowed`); OPRA's one person's
-(`personal_use`), the self-served licence; the daily and chain datasets
-kept, the live one served and not kept, the trades kept two days (a reader
-that lost some catches up from the lake). Databento's name is not
-affiliated (`not_affiliated_notice`). Who may take it (`eligibility`) is
-not declared yet: core's declaration parser does not carry it, so a
-registration declaring it is refused as differing from its upload. A
-summary, not legal advice; docs/terms.md says the same.
+**The terms and pricing Databento states** (contract 30, ruling 1032;
+`terms_and_pricing`), in plain words for each dataset: its source and what
+that source's licence asks, Databento's plans and the venue fees it passes
+through, and that distribution is a separate entitlement -- never a
+licence: the licence the deployment's admin sets on Data sources is the one
+enforced, and the plugin says nothing of whether a deployment meets
+anyone's terms. A summary, not legal advice; docs/terms.md says the same.
+
+**How a gap is recovered** (contract 30, `gap_recovery`): `daily`, `trades`
+and `options` by `backfill` -- Databento's historical API serves each
+again, and a want asks for it; `live` is `stream_only`, its quotes read as
+the latest and never served again.
 
 **Storage**: one kind of raw record, Databento's answers and stream lines as
 received (never the key), a month by default.
@@ -59,7 +56,7 @@ received (never the key), a month by default.
 
 from __future__ import annotations
 
-from meridian import DatasetDeclaration, DatasetLicence, RecordKind
+from meridian import DatasetDeclaration, RecordKind
 
 from .chains import CADENCE_SECONDS as CHAIN_CADENCE_SECONDS
 from .chains import DATA_TYPES as CHAIN_DATA_TYPES
@@ -81,8 +78,6 @@ SOURCES = {
     TRADES: (EQUITY_SOURCE, EQUS_MINI),
     OPTIONS: (OPTIONS_SOURCE, OPRA),
 }
-#: How long the lake keeps a trade by default: two days (the plan's Q40).
-TRADES_KEPT_DAYS = 2
 #: How far back Databento's history reaches is the dataset's, read at run.
 HISTORY_DAYS = 0
 DAY_TIME_ZONE = "America/New_York"
@@ -99,24 +94,37 @@ NOT_AFFILIATED = (
 )
 
 
-def licence(kept: bool, retention_days: int = 0, personal: bool = False) -> DatasetLicence:
-    """Databento's pass-through terms, as each dataset's default."""
-    return DatasetLicence(
-        kept=kept,
-        retention_days=retention_days,
-        derived_use_terms="internal_only",
-        display=True,
-        personal_use=personal,
-        redistribution="not_allowed",
-        not_affiliated_notice=NOT_AFFILIATED,
-    )
+#: Databento's plans and pass-through licensing, as docs/terms.md summarises
+#: them: every dataset's terms end with these words.
+DATABENTO_TERMS = (
+    "Databento's plans: historical data on every plan, usage-based (billed by volume) or "
+    "flat; live data from the Standard plan up. Databento passes each venue's licence fees "
+    "through: live licences are per dataset, set by Databento's licensing questionnaire, "
+    "your subscriber status (personal or commercial) and use (display or non-display) "
+    "deciding the venue's fees. Showing the data to outside parties, or redistributing it, "
+    "is a separate entitlement under each venue's terms. " + NOT_AFFILIATED
+)
+#: Each dataset's source, and what its licence asks, before Databento's words.
+SOURCE_TERMS = {
+    DAILY: "Nasdaq NLS Plus's end-of-day summary, consolidated across the US exchanges, "
+    "carried by Databento as Databento US Equities Summary. ",
+    LIVE: "The US equity venues' own feeds, aggregated by Databento as Databento US Equities "
+    "Mini, which carries no venue licence fee, for personal and commercial use alike. ",
+    TRADES: "The US equity venues' own feeds, aggregated by Databento as Databento US "
+    "Equities Mini, which carries no venue licence fee, for personal and commercial use "
+    "alike. ",
+    OPTIONS: "OPRA's options data, carried by Databento: OPRA's live data is licensed per "
+    "device for a person's own use, and for a firm by OPRA's own agreement. ",
+}
+#: How a gap in each is recovered: the history API serves all but the
+#: latest quotes again.
+GAP_RECOVERY = {DAILY: "backfill", LIVE: "stream_only", TRADES: "backfill", OPTIONS: "backfill"}
 
 
 def _declared(
     key: str,
     data_types: list[str],
     modes: list[str],
-    terms: DatasetLicence,
     *,
     cadence: int = 0,
     calendar: bool = False,
@@ -129,7 +137,8 @@ def _declared(
         modes=modes,
         cadence=cadence,
         history=HISTORY_DAYS,
-        licence_default=terms,
+        terms_and_pricing=SOURCE_TERMS[key] + DATABENTO_TERMS,
+        gap_recovery=GAP_RECOVERY[key],
         day_time_zone=DAY_TIME_ZONE,
         day_end_minute=DAY_END_MINUTE,
         calendar_id=US_EQUITY_CALENDAR if calendar else "",
@@ -141,7 +150,6 @@ CATALOGUE = (
         DAILY,
         ["meridian.v1.Price", "meridian.v1.Bar"],
         ["pull", "push"],
-        licence(kept=True),
         cadence=86_400,
         calendar=True,
     ),
@@ -149,15 +157,13 @@ CATALOGUE = (
         LIVE,
         ["meridian.v1.Price", "meridian.v1.Quote"],
         ["pull", "stream"],
-        licence(kept=False),
         cadence=LIVE_CADENCE_SECONDS,
     ),
-    _declared(TRADES, ["meridian.v1.Trade"], ["pull", "stream"], licence(True, TRADES_KEPT_DAYS)),
+    _declared(TRADES, ["meridian.v1.Trade"], ["pull", "stream"]),
     _declared(
         OPTIONS,
         list(CHAIN_DATA_TYPES[OPTIONS]),
         ["pull", "stream"],
-        licence(kept=True, personal=True),
         cadence=CHAIN_CADENCE_SECONDS,
         calendar=True,
     ),

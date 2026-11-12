@@ -17,11 +17,12 @@ licensing on databento.com before relying on it.
 
 ## What the plugin declares
 
-So the plugin declares each dataset's default terms conservatively: shown to
-people, derived data for internal use only, never redistributed; OPRA's one
-person's. Your deployment's Data sources page records the licence you enter
-and warns when more than one person can read a plugin entitled to a
-one-person dataset. Open Meridian does not decide whether your use meets
+Each dataset describes these terms in words, its source's among them, on
+your deployment's Data sources page; the plugin declares no licence. The
+page records the licence you enter -- conservatively, shown to people,
+derived data for internal use only, never redistributed, OPRA's one
+person's, where your licences say so -- and warns when more than one person
+can read a plugin entitled to a one-person dataset. Open Meridian does not decide whether your use meets
 Databento's or a venue's terms; the licence records what you entered.
 
 Databento is a trademark of its owner. This plugin is not affiliated with or

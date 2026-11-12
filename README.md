@@ -24,7 +24,9 @@ reach is declined.
 secret setting: sent to Databento alone, as the historical API's
 authentication, and never to the live gateway, which is answered a
 challenge instead; never logged or shown. Databento's and its venues' terms
-are your deployment's to settle: see [docs/terms.md](docs/terms.md).
+are your deployment's to settle: each dataset describes them in words on
+the Data sources page (contract 30), and [docs/terms.md](docs/terms.md)
+says the same.
 
 The documentation the plugin ships with -- overview, setup, pages,
 troubleshooting and terms -- is in [docs/](docs/README.md); `AGENTS.md` is
