@@ -45,8 +45,8 @@ not reach is declined, not covered.
   real-time plan, from the live gateway's replay of the last 24 hours. If
   the stream drops or the plugin restarts, the gap is caught up the same
   way, a trade never recorded twice. Where Databento states which side
-  initiated a trade, it is recorded as the aggressor. Kept two days by
-  default.
+  initiated a trade, it is recorded as the aggressor. How long the lake
+  keeps them is the deployment's licence.
 
 ## What a stock row names
 
