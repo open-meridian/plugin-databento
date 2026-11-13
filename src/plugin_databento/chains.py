@@ -65,6 +65,7 @@ import logging
 from collections import OrderedDict, deque
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Any
 
 from meridian.edge import as_reported
@@ -72,7 +73,7 @@ from meridian.errors import MeridianError
 from meridian.helpers import chains as helpers
 from meridian.operations import Money, Quote, SourceTime, Trade
 from meridian.plugin.v1 import operations_pb2 as ops
-from meridian.roles.data import SentRows
+from meridian.roles.data import SentRows, option_chains
 from meridian.roles.data.listings import Counts
 
 from .convert import (
@@ -168,8 +169,11 @@ class Chains:
     """The chains wanted of `lake` (lake.Lake), read from its source and
     recorded, and the series whose trades are streamed."""
 
-    def __init__(self, lake: Any) -> None:
+    def __init__(self, lake: Any, series_path: Path | None = None) -> None:
         self.lake = lake
+        #: Each series' first valid time and subject (SDK 0.36.3), in the
+        #: plugin's storage; never cleared on a reset.
+        self.series_times = option_chains.SeriesTimes(series_path)
         self.underlyings: dict[str, Underlying] = {}
         #: When each quote replay of the last minute was made.
         self.calls: deque[int] = deque()
@@ -510,9 +514,11 @@ class Chains:
                 return candidate
         return None
 
-    def series_row(self, held: Underlying, contract: Contract, dataset: str) -> Any | None:
+    def series_row(self, held: Underlying, contract: Contract, dataset: str) -> Any:
+        """The plugin's `option_series` for one series, as the holder builds it."""
         raw = self.lake.plugin.raw_record(contract.raw_key[:256])
-        try:
+
+        def build(valid_from_ns: int, adjusted_on: dt.date | None) -> Any:
             return helpers.option_series(
                 held.subject,
                 contract.osi,
@@ -524,28 +530,41 @@ class Chains:
                 settlement_method=contract.settlement_method,
                 contract_multiplier=contract.multiplier,
                 deliverable=[(held.subject, STANDARD_SHARES)] if contract.standard else (),
-                valid_from_ns=self.now(),
+                valid_from_ns=valid_from_ns,
                 raw=raw,
+                adjusted_on=adjusted_on,
             )
-        except ValueError:
-            self.counts.unconverted += 1
-            return None
+
+        return build
 
     async def record_series(
         self, held: Underlying, chosen: Sequence[Contract], want_id: str
     ) -> None:
-        """The terms of the series chosen, each sent only where changed."""
+        """The terms of the series chosen, each under its key's first valid
+        time (option_chains.SeriesTimes): sent where changed, or to a reader
+        waiting."""
         dataset = self.dataset()
+        now = self.now()
+        today = new_york_date(now)
         rows: list[Any] = []
         for contract in chosen:
-            row = self.series_row(held, contract, dataset)
-            if row is None:
+            try:
+                row = self.series_times.series(
+                    self.series_row(held, contract, dataset), dataset=dataset,
+                    osi=contract.osi, subject=held.subject, now_ns=now, today=today,
+                    waiting=bool(want_id),
+                )  # fmt: skip
+            except ValueError:
+                self.counts.unconverted += 1
                 continue
-            terms = repr([(f.path, f.value) for f in row.fields])
-            if self.sent.changed(SERIES, dataset, contract.osi, terms):
+            if row is not None:
                 rows.append(row)
         if rows:
-            await self.send("series", rows, want_id)
+
+            async def send_batch(batch: list[Any]) -> None:
+                await self.send("series", batch, want_id)
+
+            self.counts.unchanged += await self.series_times.record(send_batch, rows, today)
 
     async def read_statistics(
         self, held: Underlying, days: set[dt.date], want_id: str, business_date: str = ""
