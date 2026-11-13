@@ -229,6 +229,26 @@ async def test_open_interest_dated_by_the_calendar(tmp_path: Path) -> None:
     assert d(oi[0].value.value) in (Decimal(1543), Decimal(2210))
 
 
+async def test_a_statistic_read_again_keeps_its_valid_time(tmp_path: Path) -> None:
+    """A row key fixes its valid time (spec/the-lake rule 5; SDK 0.36.2): a
+    statistic is valid from the start of the market day it describes, in New
+    York, never when it was published or read, so a re-read restates the
+    value under the same valid time."""
+    recorder, lake = made(tmp_path, DURING)
+    event = want(SPY, dataset="suite-plugin:options", data_type="meridian.v1.Statistic")
+    await ask(lake, recorder, event)
+    first = {
+        s.meta.row_key: s.meta.valid_from_ns
+        for s in recorded(recorder, "RecordStatistics", "statistics")
+    }
+    midnight = int(dt.datetime(2026, 10, 7, 4, tzinfo=dt.UTC).timestamp()) * NS
+    assert first and set(first.values()) == {midnight}, "Wednesday's start in New York"
+    lake.clock_ns.now += 3 * 3600 * NS
+    await ask(lake, recorder, event)
+    again = recorded(recorder, "RecordStatistics", "statistics")[len(first) :]
+    assert again and {s.meta.row_key: s.meta.valid_from_ns for s in again} == first
+
+
 async def test_a_past_dates_open_interest_reads_the_next_market_days(tmp_path: Path) -> None:
     # Tuesday: the history reaches Monday's publication.
     recorder, lake = made(tmp_path, at("2026-10-13", 9))

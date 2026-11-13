@@ -589,7 +589,6 @@ class Chains:
                 each.value,
                 day,
                 dataset=dataset,
-                valid_from_ns=each.published_ns,
                 raw=self.lake.plugin.raw_record(each.raw_key[:256]),
             )
             assert stat.meta is not None
