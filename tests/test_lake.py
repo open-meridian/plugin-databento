@@ -229,6 +229,26 @@ async def test_open_interest_dated_by_the_calendar(tmp_path: Path) -> None:
     assert d(oi[0].value.value) in (Decimal(1543), Decimal(2210))
 
 
+async def test_a_statistic_read_again_keeps_its_valid_time(tmp_path: Path) -> None:
+    """A row key fixes its valid time (spec/the-lake rule 5; SDK 0.36.2): a
+    statistic is valid from the start of the market day it describes, in New
+    York, never when it was published or read, so a re-read restates the
+    value under the same valid time."""
+    recorder, lake = made(tmp_path, DURING)
+    event = want(SPY, dataset="suite-plugin:options", data_type="meridian.v1.Statistic")
+    await ask(lake, recorder, event)
+    first = {
+        s.meta.row_key: s.meta.valid_from_ns
+        for s in recorded(recorder, "RecordStatistics", "statistics")
+    }
+    midnight = int(dt.datetime(2026, 10, 7, 4, tzinfo=dt.UTC).timestamp()) * NS
+    assert first and set(first.values()) == {midnight}, "Wednesday's start in New York"
+    lake.clock_ns.now += 3 * 3600 * NS
+    await ask(lake, recorder, event)
+    again = recorded(recorder, "RecordStatistics", "statistics")[len(first) :]
+    assert again and {s.meta.row_key: s.meta.valid_from_ns for s in again} == first
+
+
 async def test_a_past_dates_open_interest_reads_the_next_market_days(tmp_path: Path) -> None:
     # Tuesday: the history reaches Monday's publication.
     recorder, lake = made(tmp_path, at("2026-10-13", 9))
@@ -325,3 +345,41 @@ def test_the_calendar_backoff_is_bounded(tmp_path: Path) -> None:
     for _ in range(40):
         chains._calendar_failed("the calendar was not read")
     assert chains.calendar_retry_ns - lake.clock_ns() == CALENDAR_RETRY_MOST_SECONDS * NS
+
+
+async def test_a_restart_keeps_every_series_valid_time(tmp_path: Path) -> None:
+    """The row-key rule (spec/the-lake rule 5): a series' terms recorded
+    again after a restart, a day later, keep their key's first valid time,
+    held in the plugin's storage (SDK 0.36.3, option_chains.SeriesTimes)."""
+    kept = tmp_path / "series.json"
+    series_want = want(SPY, dataset="suite-plugin:options", data_type="meridian.v1.ListedSeries")
+    recorder = Recorder()
+    answer_records(recorder, RECORDS)
+    answer_calendar(recorder)
+    lake = synthetic_lake(recorder, Clock(DURING), tmp_path, series_path=kept)
+    await ask(lake, recorder, series_want)
+    first = {
+        s.meta.row_key: s.meta.valid_from_ns for s in recorded(recorder, "RecordSeries", "series")
+    }
+    assert len(first) == 14 and set(first.values()) == {DURING}
+    # Restarted the next day: a reader waiting is answered under each
+    # series' first valid time, and nothing is sent unasked.
+    again = Recorder()
+    answer_records(again, RECORDS)
+    answer_calendar(again)
+    restarted = synthetic_lake(again, Clock(DURING + 24 * 3600 * NS), tmp_path, series_path=kept)
+    await ask(restarted, again, series_want)
+    resent = {
+        s.meta.row_key: s.meta.valid_from_ns for s in recorded(again, "RecordSeries", "series")
+    }
+    assert resent == first
+    unasked = Recorder()
+    answer_records(unasked, RECORDS)
+    answer_calendar(unasked)
+    quiet = synthetic_lake(unasked, Clock(DURING + 48 * 3600 * NS), tmp_path, series_path=kept)
+    await ask(
+        quiet,
+        unasked,
+        want(SPY, dataset="suite-plugin:options", data_type="meridian.v1.ListedSeries", want_id=""),
+    )
+    assert recorded(unasked, "RecordSeries", "series") == []

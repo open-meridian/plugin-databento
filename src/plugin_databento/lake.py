@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import dataclasses
 import datetime as dt
+from pathlib import Path
 from typing import Any
 
 from meridian.plugin.v1 import operations_pb2 as ops
@@ -91,11 +92,11 @@ class Lake(listings.Feed):
     history_from = HISTORY_FROM
     calendar_id = US_EQUITY_CALENDAR
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, series_path: Path | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         #: The option chains wanted, counted as one dataset.
         self.counts[OPTIONS] = listings.Counts()
-        self.chains = Chains(self)
+        self.chains = Chains(self, series_path)
         #: What each asset class's plan reaches (settings.py).
         self.plans = {"stocks": END_OF_DAY, "options": END_OF_DAY}
         self.streaming = False

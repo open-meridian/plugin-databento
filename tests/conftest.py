@@ -139,9 +139,12 @@ def synthetic_lake(
     stocks: str = REAL_TIME,
     options: str = REAL_TIME,
     reach_end_ns: Callable[[], int] | None = None,
+    series_path: Path | None = None,
 ) -> Lake:
     source = synthetic_source(clock, tmp, held, reach_end_ns)
-    lake: Lake = recorder.bind(Lake(source, Products(tmp / "products.json"), clock))
+    lake: Lake = recorder.bind(
+        Lake(source, Products(tmp / "products.json"), clock, series_path=series_path)
+    )
     lake.use_plan(stocks, options)
     return lake
 
